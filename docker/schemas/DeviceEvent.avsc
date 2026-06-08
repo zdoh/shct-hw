@@ -1,0 +1,27 @@
+{
+  "type": "record",
+  "name": "DeviceEvent",
+  "namespace": "com.proselyte.platform.events.avro",
+  "fields": [
+    {
+      "name": "eventId",
+      "type": "string"
+    },
+    {
+      "name": "deviceId",
+      "type": "string"
+    },
+    {
+      "name": "timestampMs",
+      "type": "long"
+    },
+    {
+      "name": "eventType",
+      "type": "string"
+    },
+    {
+      "name": "payload",
+      "type": "string"
+    }
+  ]
+}
