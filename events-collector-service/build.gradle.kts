@@ -42,7 +42,9 @@ dependencies {
 	val dotenvJava: String by project
 
 	implementation("org.springframework.boot:spring-boot-starter-kafka")
+	implementation("org.springframework.boot:spring-boot-starter-web")
 
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
 	implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
     implementation("org.springframework.integration:spring-integration-redis")
@@ -66,6 +68,9 @@ dependencies {
     // Mapping
     implementation("org.mapstruct:mapstruct:$mapstructVersion")
     annotationProcessor("org.mapstruct:mapstruct-processor:$mapstructVersion")
+
+    // Metrics
+    implementation("io.micrometer:micrometer-registry-prometheus")
 
     // Annotation processors (lombok, spring-boot-configuration)
     compileOnly("org.projectlombok:lombok")

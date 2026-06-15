@@ -4,7 +4,7 @@
 set -e
 
 echo "Waiting for Schema Registry..."
-while ! curl -s -f http://schema-registry:8081/subjects; do
+while ! curl -s -f http://schema-registry:8381/subjects; do
   sleep 2
 done
 echo "Schema Registry is ready."
@@ -19,7 +19,7 @@ if [ -d /schemas ]; then
       schema_content=$(cat "$schema_file" | jq -Rs .)
       curl -X POST -H "Content-Type: application/vnd.schemaregistry.v1+json" \
            --data "{\"schemaType\": \"AVRO\", \"schema\": $schema_content}" \
-           http://schema-registry:8081/subjects/$subject_name/versions
+           http://schema-registry:8381/subjects/$subject_name/versions
       echo ""
     fi
   done

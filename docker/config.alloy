@@ -1,0 +1,47 @@
+// Сбор метрик с приложения (как альтернатива прямому scraping Prometheus'ом)
+prometheus.scrape "spring_app" {
+  targets = [
+    { "__address__" = "events-collector-service:8781", "job" = "spring-boot-metrics" },
+  ]
+  forward_to = [prometheus.remote_write.default.receiver]
+  scrape_interval = "15s"
+  metrics_path = "/actuator/prometheus"
+}
+
+// Отправка метрик в Prometheus (remote write)
+prometheus.remote_write "default" {
+  endpoint {
+    url = "http://prometheus:9090/api/v1/write"
+  }
+}
+
+// Сбор логов из Docker контейнеров
+loki.source.docker "default" {
+  host            = "unix:///var/run/docker.sock"
+  targets         = []
+  forward_to      = [loki.write.default.receiver]
+  relabel_rules   = loki.relabel.docker_logs.rules
+}
+
+// Релейблинг для добавления метаданных контейнера
+loki.relabel "docker_logs" {
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    target_label  = "container"
+    regex         = "/(.*)"
+  }
+  rule {
+    source_labels = ["__meta_docker_container_label_logging"]
+    target_label  = "logging"
+    action        = "keep"
+    regex         = "promtail"
+  }
+  forward_to = []
+}
+
+// Отправка логов в Loki
+loki.write "default" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}
