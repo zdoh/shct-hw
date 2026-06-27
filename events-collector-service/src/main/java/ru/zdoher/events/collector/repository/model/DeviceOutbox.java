@@ -8,13 +8,14 @@ import java.time.OffsetDateTime;
 @Builder
 public record DeviceOutbox(
   String eventId,
-  String deviceId,
+  String sourceEventId,
   Long sourceTimestampMs,
   OffsetDateTime createdAt,
   OffsetDateTime updatedAt,
   Long stateVersion,
   DeviceEventOutboxStatus status,
   Integer attempts,
-  String lastError
+  String lastError,
+  String payload
 ) {
 }

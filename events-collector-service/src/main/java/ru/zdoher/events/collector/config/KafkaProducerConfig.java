@@ -1,11 +1,10 @@
 package ru.zdoher.events.collector.config;
 
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig;
-import io.confluent.kafka.serializers.KafkaAvroSerializer;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.apache.avro.generic.GenericRecord;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,12 +25,12 @@ public class KafkaProducerConfig {
     private final KafkaProperties kafkaProperties;
 
     @Bean
-    ProducerFactory<String, GenericRecord> producerFactory() {
+    ProducerFactory<String, byte[]> producerFactory() {
         return new DefaultKafkaProducerFactory<>(
           Map.of(
             ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers(),
             ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class,
-            ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaAvroSerializer.class,
+            ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class,
             ProducerConfig.ACKS_CONFIG, REQUIRED_ACKS,
             ProducerConfig.RETRIES_CONFIG, maxRetries(),
             ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, maxInFlightRequestsPerConnection(),
@@ -43,7 +42,7 @@ public class KafkaProducerConfig {
     }
 
     @Bean
-    KafkaTemplate<String, GenericRecord> kafkaTemplate() {
+    KafkaTemplate<String, byte[]> kafkaTemplate() {
         return new KafkaTemplate<>(producerFactory());
     }
 

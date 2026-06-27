@@ -9,6 +9,7 @@ import ru.zdoher.events.collector.service.DeviceEventOutboxCreator;
 import ru.zdoher.events.collector.service.DeviceEventOutboxFormer;
 
 import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -22,7 +23,8 @@ public class DeviceEventOutboxCreationService implements DeviceEventOutboxCreato
         return deviceEventOutboxRepository.save(
           deviceEventOutboxFormer.form(
             deviceEventReceived,
-            OffsetDateTime.now()
+            OffsetDateTime.now(),
+            UUID.randomUUID().toString()
           )
         );
     }

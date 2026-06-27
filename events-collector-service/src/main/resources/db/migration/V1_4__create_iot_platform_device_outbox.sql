@@ -1,0 +1,1 @@
+RENAME TABLE iot_platform.device_outbox TO iot_platform.device_outbox_old_v1;

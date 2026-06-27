@@ -13,7 +13,12 @@ echo "Schema Registry is ready."
 if [ -d /schemas ]; then
   for schema_file in /schemas/*.avsc; do
     if [ -f "$schema_file" ]; then
-      subject_name=$(basename "$schema_file" .avsc)-value
+      namespace=$(jq -r '.namespace' "$schema_file")
+      name=$(jq -r '.name' "$schema_file")
+      # Формируем subject как полное имя класса
+      subject_name="${namespace}.${name}"
+
+#      subject_name=$(basename "$schema_file" .avsc)-value
       echo "Registering $subject_name"
       # Формируем JSON с экранированием
       schema_content=$(cat "$schema_file" | jq -Rs .)

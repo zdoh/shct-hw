@@ -1,7 +1,6 @@
 CREATE TABLE IF NOT EXISTS iot_platform.device_outbox
 (
     event_id            String,
-    device_id           String,
     source_timestamp_ms Int64,
     created_at          DateTime64(3, 'UTC'),
     updated_at          DateTime64(3, 'UTC'),

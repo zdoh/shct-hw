@@ -1,9 +1,12 @@
-package ru.zdoher.events.collector.domain;
+package ru.zdoher.events.collector.repository.model;
+
+import ru.zdoher.events.collector.domain.DeviceEventType;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 
-public record DeviceEventReceived(
+public record DeviceEventRecord(
+  String deviceId,
   String eventId,
   DeviceEventType eventType,
   Long eventTimeMs,
@@ -11,6 +14,6 @@ public record DeviceEventReceived(
   String payload,
   LocalDate eventDate,
   OffsetDateTime ingestedAt,
-  Device device
+  DeviceRecord device
 ) {
 }

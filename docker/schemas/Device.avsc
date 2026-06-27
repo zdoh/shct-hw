@@ -1,19 +1,24 @@
 {
     "type": "record",
-    "name": "DeviceEvent",
+    "name": "Device",
     "namespace": "com.proselyte.platform.events.avro",
-    "doc": "Исходное событие платформы. Содержит данные устройства, которые сохраняются в ClickHouse и используются для построения производного события в topic devices.",
+    "doc": "Производное событие для создания или обновления устройства в device-collector-service.",
     "fields": [
         {
             "name": "eventId",
             "type": "string",
-            "doc": "Уникальный идентификатор исходного события."
+            "doc": "Уникальный идентификатор производного события."
+        },
+        {
+            "name": "sourceEventId",
+            "type": "string",
+            "doc": "Идентификатор исходного события из topic events."
         },
         {
             "name": "eventType",
             "type": {
                 "type": "enum",
-                "name": "DeviceEventType",
+                "name": "DeviceUpsertEventType",
                 "symbols": [
                     "CREATED",
                     "UPDATED",
@@ -23,17 +28,12 @@
                 ]
             },
             "default": "SNAPSHOT",
-            "doc": "Тип исходного события."
+            "doc": "Тип изменения, которое нужно применить к модели устройства."
         },
         {
-            "name": "eventTimeMs",
+            "name": "emittedAtMs",
             "type": "long",
-            "doc": "Время возникновения события в миллисекундах Unix-времени."
-        },
-        {
-            "name": "sourceSystem",
-            "type": "string",
-            "doc": "Система-источник события."
+            "doc": "Время публикации производного события в миллисекундах Unix-времени."
         },
         {
             "name": "device",
@@ -204,15 +204,6 @@
                     }
                 ]
             }
-        },
-        {
-            "name": "payload",
-            "type": [
-                "null",
-                "string"
-            ],
-            "default": null,
-            "doc": "Сырая полезная нагрузка исходного события, если ее нужно сохранить для аудита или последующего анализа."
         }
     ]
 }
