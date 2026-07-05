@@ -1,18 +1,51 @@
 databaseName: device_collector_service
 
 dataSources:
-  ds_0:
-#    dataSourceClassName: com.zaxxer.hikari.HikariDataSource
-    url: jdbc:postgresql://postgres-shard1:5432/device_collector_service
+  # === Источники данных для ШАРДА 0 ===
+  ds_0_primary:
+    url: jdbc:postgresql://postgres-shard0-master:5432/device_collector_service
     username: user
     password: user
-  ds_1:
-#    dataSourceClassName: com.zaxxer.hikari.HikariDataSource
-    url: jdbc:postgresql://postgres-shard2:5432/device_collector_service
+  ds_0_replica:
+    url: jdbc:postgresql://postgres-shard0-replica:5432/device_collector_service
+    username: user
+    password: user
+  # === Источники данных для ШАРДА 1 ===
+  ds_1_primary:
+    url: jdbc:postgresql://postgres-shard1-master:5432/device_collector_service
+    username: user
+    password: user
+  ds_1_replica:
+    url: jdbc:postgresql://postgres-shard1-replica:5432/device_collector_service
     username: user
     password: user
 
 rules:
+  # ==========================================
+  # 1. ПРАВИЛА READWRITE-SPLITTING
+  # ==========================================
+  - !READWRITE_SPLITTING
+    dataSourceGroups:
+      ds_0:
+        writeDataSourceName: ds_0_primary
+        readDataSourceNames:
+          - ds_0_replica
+        transactionalReadQueryStrategy: PRIMARY
+        loadBalancerName: round_robin
+      ds_1:
+        writeDataSourceName: ds_1_primary
+        readDataSourceNames:
+          - ds_1_replica
+        transactionalReadQueryStrategy: PRIMARY
+        loadBalancerName: round_robin
+
+    loadBalancers:
+      round_robin:
+        type: ROUND_ROBIN
+
+  # ==========================================
+  # 2. ПРАВИЛА ШАРДИРОВАНИЯ
+  # ==========================================
   - !SHARDING
     tables:
       device:
@@ -44,4 +77,4 @@ rules:
       event_id_inline:
         type: INLINE
         props:
-          algorithm-expression: ds_${event_id.toString().hashCode() % 2}
+          algorithm-expression: ds_${event_id.hashCode() % 2}
