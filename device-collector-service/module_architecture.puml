@@ -1,0 +1,32 @@
+@startuml
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+LAYOUT_LEFT_RIGHT()
+skinparam linetype ortho
+
+title Модуль 3. Реестр устройств на шардированном PostgreSQL
+
+System_Boundary(platform, "Учебная IoT-платформа") {
+Container(kafkaDevices, "Kafka topic: devices", "Kafka / Avro", "Производный поток обнаруженных устройств")
+Container(kafkaDlt, "Kafka topic: devices-dlt", "Kafka", "Сообщения, которые не удалось обработать")
+
+Container(service, "device-collector-service", "Java 25 / Spring Boot 4", "Читает DeviceSeenEvent и поддерживает реестр устройств")
+
+Container(proxy, "ShardingSphere-Proxy", "Apache ShardingSphere", "Маршрутизирует SQL-запросы по PostgreSQL-шардам")
+
+ContainerDb(pg0, "PostgreSQL shard 0", "PostgreSQL 18", "Часть таблиц devices и processed_device_events")
+ContainerDb(pg1, "PostgreSQL shard 1", "PostgreSQL 18", "Часть таблиц devices и processed_device_events")
+
+Container(prometheus, "Prometheus", "Monitoring", "Собирает метрики")
+Container(grafana, "Grafana", "Dashboards", "Показывает состояние сервиса")
+}
+
+Rel(kafkaDevices, service, "DeviceSeenEvent", "Kafka consumer")
+Rel(service, kafkaDlt, "Необработанные сообщения", "Kafka producer")
+Rel(service, proxy, "SQL-запросы", "PostgreSQL protocol")
+Rel(proxy, pg0, "Маршрутизация по device_id")
+Rel(proxy, pg1, "Маршрутизация по device_id")
+Rel(prometheus, service, "scrape /actuator/prometheus")
+Rel(grafana, prometheus, "читает метрики")
+
+@enduml

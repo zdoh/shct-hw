@@ -1,0 +1,1 @@
+CREATE SCHEMA IF NOT EXISTS device_collector_service.device_collector_service;

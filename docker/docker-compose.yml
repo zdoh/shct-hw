@@ -79,8 +79,8 @@ services:
         environment:
             REDIS_PASSWORD: ${REDIS_PASSWORD}
         command: >
-            redis-server 
-            --save 60 1 
+            redis-server
+            --save 60 1
             --loglevel warning
             --requirepass ${REDIS_PASSWORD}
         restart: unless-stopped
@@ -90,7 +90,67 @@ services:
             timeout: 5s
             retries: 10
 
+    # ---- Первый шард PostgreSQL ----
+    postgres-shard1:
+        image: postgres:18-alpine
+        container_name: postgres-shard1
+        environment:
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: postgres
+            POSTGRES_DB: postgres
+        volumes:
+            - ./config/postgresql/init-scripts:/docker-entrypoint-initdb.d/
+        ports:
+            - "5433:5432"
+        restart: unless-stopped
+        healthcheck:
+            test: [ "CMD-SHELL", "pg_isready -U postgres -d postgres" ]
+            interval: 10s
+            timeout: 5s
+            retries: 5
 
+    # ---- Второй шард PostgreSQL ----
+    postgres-shard2:
+        image: postgres:18-alpine
+        container_name: postgres-shard2
+        environment:
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: postgres
+            POSTGRES_DB: postgres
+        volumes:
+            - ./config/postgresql/init-scripts:/docker-entrypoint-initdb.d/
+        ports:
+            - "5434:5432"
+        restart: unless-stopped
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+    # ---- ShardingSphere-Proxy ----
+    shardingsphere-proxy:
+        image: apache/shardingsphere-proxy:5.5.3
+        container_name: shardingsphere-proxy
+        ports:
+            - "13308:3308"  # Прокси будет доступен на порту 13308
+        volumes:
+            - ./global.yaml:/opt/shardingsphere-proxy/conf/global.yaml
+            - ./config-sharding.yaml:/opt/shardingsphere-proxy/conf/config-sharding.yaml
+        environment:
+            PORT: 3308
+            JVM_OPTS: "-Djava.awt.headless=true"
+        healthcheck:
+            test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/3308' && echo 'OK' || exit 1"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        depends_on:
+            postgres-shard1:
+                condition: service_healthy
+            postgres-shard2:
+                condition: service_healthy
+        restart: unless-stopped
 
     kafka-ui:
         container_name: shcut-kafka-ui
@@ -105,6 +165,7 @@ services:
             KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
             KAFKA_CLUSTERS_0_SCHEMAREGISTRY: "http://schema-registry:8381"
 
+    # ---- Мои сервисы ----
     events-collector-service:
         build:
             context: ../events-collector-service
@@ -128,13 +189,40 @@ services:
         labels:
             logging: "promtail"
         expose:
-            - "8781"
             - "8780"
+            - "8781"
         ports:
-            - 8781:8781
             - 8780:8780
+            - 8781:8781
 
-    ### --- СЕРВИСЫ МОНИТОРИНГА  ---
+    device-collector-service:
+        build:
+            context: ../device-collector-service
+            dockerfile: Dockerfile
+        container_name: device-collector-service
+        environment:
+            SPRING_PROFILES_ACTIVE: docker
+            CLICKHOUSE_USER: ${CLICKHOUSE_USER}
+            DEVICE_COLLECTOR_PR_PG_USER: ${DEVICE_COLLECTOR_PR_PG_USER}
+            DEVICE_COLLECTOR_PR_PG_PASSWORD: ${DEVICE_COLLECTOR_PR_PG_USER}
+        depends_on:
+            kafka:
+                condition: service_healthy
+            schema-registry:
+                condition: service_healthy
+            shardingsphere-proxy:
+                condition: service_healthy
+        restart: unless-stopped
+        labels:
+            logging: "promtail"
+        expose:
+            - "8780"
+            - "8791"
+        ports:
+            - 8790:8790
+            - 8791:8791
+
+    ## --- СЕРВИСЫ МОНИТОРИНГА  ---
     prometheus:
         image: prom/prometheus:latest
         container_name: prometheus

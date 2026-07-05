@@ -1,0 +1,47 @@
+databaseName: device_collector_service
+
+dataSources:
+  ds_0:
+#    dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+    url: jdbc:postgresql://postgres-shard1:5432/device_collector_service
+    username: user
+    password: user
+  ds_1:
+#    dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+    url: jdbc:postgresql://postgres-shard2:5432/device_collector_service
+    username: user
+    password: user
+
+rules:
+  - !SHARDING
+    tables:
+      device:
+        actualDataNodes: ds_${0..1}.device
+        databaseStrategy:
+          standard:
+            shardingColumn: external_device_id
+            shardingAlgorithmName: external_device_id_inline
+      sensor:
+        actualDataNodes: ds_${0..1}.sensor
+        databaseStrategy:
+          standard:
+            shardingColumn: external_device_id
+            shardingAlgorithmName: external_device_id_inline
+      processed_device_event:
+        actualDataNodes: ds_${0..1}.processed_device_event
+        databaseStrategy:
+          standard:
+            shardingColumn: event_id
+            shardingAlgorithmName: event_id_inline
+
+    # ===== Алгоритмы шардирования =====
+    shardingAlgorithms:
+      external_device_id_inline:
+        type: INLINE
+        props:
+          algorithm-expression: ds_${external_device_id.hashCode() % 2}
+
+      event_id_inline:
+        type: INLINE
+        props:
+          algorithm-expression: ds_${event_id.toString().hashCode() % 2}
