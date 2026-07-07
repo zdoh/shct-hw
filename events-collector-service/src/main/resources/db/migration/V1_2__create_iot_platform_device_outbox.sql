@@ -8,7 +8,8 @@ CREATE TABLE IF NOT EXISTS iot_platform.device_outbox
     state_version       UInt64,
     status Enum8('NEW' = 0, 'SENT' = 1, 'FAILED' = 2),
     attempts            UInt32,
-    last_error          String
+    last_error          String,
+    payload             String
 )
     ENGINE = ReplacingMergeTree(state_version)
         PARTITION BY toYYYYMM(created_at)

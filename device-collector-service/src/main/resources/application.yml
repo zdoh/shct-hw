@@ -1,0 +1,27 @@
+spring:
+    application:
+        name: events-collector-service
+
+logging:
+    structured:
+        format:
+            file: json
+
+management:
+    server:
+        port: 8791
+    endpoints:
+        web:
+            exposure:
+                include: health, info, prometheus
+    metrics:
+        export:
+            prometheus:
+                enabled: true
+        distribution:
+            percentiles-histogram:
+                http:
+                    server:
+                        requests: true
+        tags:
+            application: events-collector-service

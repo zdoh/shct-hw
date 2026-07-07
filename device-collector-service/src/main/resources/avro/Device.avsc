@@ -1,0 +1,209 @@
+{
+    "type": "record",
+    "name": "Device",
+    "namespace": "com.proselyte.platform.events.avro",
+    "doc": "Производное событие для создания или обновления устройства в device-collector-service.",
+    "fields": [
+        {
+            "name": "eventId",
+            "type": "string",
+            "doc": "Уникальный идентификатор производного события."
+        },
+        {
+            "name": "sourceEventId",
+            "type": "string",
+            "doc": "Идентификатор исходного события из topic events."
+        },
+        {
+            "name": "eventType",
+            "type": {
+                "type": "enum",
+                "name": "DeviceUpsertEventType",
+                "symbols": [
+                    "CREATED",
+                    "UPDATED",
+                    "DELETED",
+                    "SNAPSHOT",
+                    "TELEMETRY"
+                ]
+            },
+            "default": "SNAPSHOT",
+            "doc": "Тип изменения, которое нужно применить к модели устройства."
+        },
+        {
+            "name": "emittedAtMs",
+            "type": "long",
+            "doc": "Время публикации производного события в миллисекундах Unix-времени."
+        },
+        {
+            "name": "device",
+            "type": {
+                "type": "record",
+                "name": "DeviceSnapshot",
+                "doc": "Снимок текущего состояния устройства.",
+                "fields": [
+                    {
+                        "name": "deviceId",
+                        "type": "string"
+                    },
+                    {
+                        "name": "tenantId",
+                        "type": "string"
+                    },
+                    {
+                        "name": "ownerId",
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "default": null
+                    },
+                    {
+                        "name": "deviceType",
+                        "type": "string"
+                    },
+                    {
+                        "name": "serialNumber",
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "default": null
+                    },
+                    {
+                        "name": "manufacturer",
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "default": null
+                    },
+                    {
+                        "name": "model",
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "default": null
+                    },
+                    {
+                        "name": "firmwareVersion",
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "default": null
+                    },
+                    {
+                        "name": "status",
+                        "type": {
+                            "type": "enum",
+                            "name": "DeviceStatus",
+                            "symbols": [
+                                "UNKNOWN",
+                                "ACTIVE",
+                                "INACTIVE",
+                                "MAINTENANCE",
+                                "BLOCKED",
+                                "DELETED"
+                            ]
+                        },
+                        "default": "UNKNOWN"
+                    },
+                    {
+                        "name": "registeredAtMs",
+                        "type": [
+                            "null",
+                            "long"
+                        ],
+                        "default": null
+                    },
+                    {
+                        "name": "lastSeenAtMs",
+                        "type": [
+                            "null",
+                            "long"
+                        ],
+                        "default": null
+                    },
+                    {
+                        "name": "settings",
+                        "type": {
+                            "type": "map",
+                            "values": "string"
+                        },
+                        "default": {}
+                    },
+                    {
+                        "name": "attributes",
+                        "type": {
+                            "type": "map",
+                            "values": "string"
+                        },
+                        "default": {}
+                    },
+                    {
+                        "name": "sensors",
+                        "type": {
+                            "type": "array",
+                            "items": {
+                                "type": "record",
+                                "name": "SensorSnapshot",
+                                "fields": [
+                                    {
+                                        "name": "sensorId",
+                                        "type": "string"
+                                    },
+                                    {
+                                        "name": "sensorType",
+                                        "type": "string"
+                                    },
+                                    {
+                                        "name": "unit",
+                                        "type": [
+                                            "null",
+                                            "string"
+                                        ],
+                                        "default": null
+                                    },
+                                    {
+                                        "name": "value",
+                                        "type": [
+                                            "null",
+                                            "string"
+                                        ],
+                                        "default": null
+                                    },
+                                    {
+                                        "name": "measuredAtMs",
+                                        "type": [
+                                            "null",
+                                            "long"
+                                        ],
+                                        "default": null
+                                    },
+                                    {
+                                        "name": "status",
+                                        "type": {
+                                            "type": "enum",
+                                            "name": "SensorStatus",
+                                            "symbols": [
+                                                "UNKNOWN",
+                                                "OK",
+                                                "WARN",
+                                                "ERROR",
+                                                "DISABLED"
+                                            ]
+                                        },
+                                        "default": "UNKNOWN"
+                                    }
+                                ]
+                            }
+                        },
+                        "default": []
+                    }
+                ]
+            }
+        }
+    ]
+}

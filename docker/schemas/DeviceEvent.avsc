@@ -1,27 +1,218 @@
 {
-  "type": "record",
-  "name": "DeviceEvent",
-  "namespace": "com.proselyte.platform.events.avro",
-  "fields": [
-    {
-      "name": "eventId",
-      "type": "string"
-    },
-    {
-      "name": "deviceId",
-      "type": "string"
-    },
-    {
-      "name": "timestampMs",
-      "type": "long"
-    },
-    {
-      "name": "eventType",
-      "type": "string"
-    },
-    {
-      "name": "payload",
-      "type": "string"
-    }
-  ]
+    "type": "record",
+    "name": "DeviceEvent",
+    "namespace": "com.proselyte.platform.events.avro",
+    "doc": "Исходное событие платформы. Содержит данные устройства, которые сохраняются в ClickHouse и используются для построения производного события в topic devices.",
+    "fields": [
+        {
+            "name": "eventId",
+            "type": "string",
+            "doc": "Уникальный идентификатор исходного события."
+        },
+        {
+            "name": "eventType",
+            "type": {
+                "type": "enum",
+                "name": "DeviceEventType",
+                "symbols": [
+                    "CREATED",
+                    "UPDATED",
+                    "DELETED",
+                    "SNAPSHOT",
+                    "TELEMETRY"
+                ]
+            },
+            "default": "SNAPSHOT",
+            "doc": "Тип исходного события."
+        },
+        {
+            "name": "eventTimeMs",
+            "type": "long",
+            "doc": "Время возникновения события в миллисекундах Unix-времени."
+        },
+        {
+            "name": "sourceSystem",
+            "type": "string",
+            "doc": "Система-источник события."
+        },
+        {
+            "name": "device",
+            "type": {
+                "type": "record",
+                "name": "DeviceSnapshot",
+                "doc": "Снимок текущего состояния устройства.",
+                "fields": [
+                    {
+                        "name": "deviceId",
+                        "type": "string"
+                    },
+                    {
+                        "name": "tenantId",
+                        "type": "string"
+                    },
+                    {
+                        "name": "ownerId",
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "default": null
+                    },
+                    {
+                        "name": "deviceType",
+                        "type": "string"
+                    },
+                    {
+                        "name": "serialNumber",
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "default": null
+                    },
+                    {
+                        "name": "manufacturer",
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "default": null
+                    },
+                    {
+                        "name": "model",
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "default": null
+                    },
+                    {
+                        "name": "firmwareVersion",
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "default": null
+                    },
+                    {
+                        "name": "status",
+                        "type": {
+                            "type": "enum",
+                            "name": "DeviceStatus",
+                            "symbols": [
+                                "UNKNOWN",
+                                "ACTIVE",
+                                "INACTIVE",
+                                "MAINTENANCE",
+                                "BLOCKED",
+                                "DELETED"
+                            ]
+                        },
+                        "default": "UNKNOWN"
+                    },
+                    {
+                        "name": "registeredAtMs",
+                        "type": [
+                            "null",
+                            "long"
+                        ],
+                        "default": null
+                    },
+                    {
+                        "name": "lastSeenAtMs",
+                        "type": [
+                            "null",
+                            "long"
+                        ],
+                        "default": null
+                    },
+                    {
+                        "name": "settings",
+                        "type": {
+                            "type": "map",
+                            "values": "string"
+                        },
+                        "default": {}
+                    },
+                    {
+                        "name": "attributes",
+                        "type": {
+                            "type": "map",
+                            "values": "string"
+                        },
+                        "default": {}
+                    },
+                    {
+                        "name": "sensors",
+                        "type": {
+                            "type": "array",
+                            "items": {
+                                "type": "record",
+                                "name": "SensorSnapshot",
+                                "fields": [
+                                    {
+                                        "name": "sensorId",
+                                        "type": "string"
+                                    },
+                                    {
+                                        "name": "sensorType",
+                                        "type": "string"
+                                    },
+                                    {
+                                        "name": "unit",
+                                        "type": [
+                                            "null",
+                                            "string"
+                                        ],
+                                        "default": null
+                                    },
+                                    {
+                                        "name": "value",
+                                        "type": [
+                                            "null",
+                                            "string"
+                                        ],
+                                        "default": null
+                                    },
+                                    {
+                                        "name": "measuredAtMs",
+                                        "type": [
+                                            "null",
+                                            "long"
+                                        ],
+                                        "default": null
+                                    },
+                                    {
+                                        "name": "status",
+                                        "type": {
+                                            "type": "enum",
+                                            "name": "SensorStatus",
+                                            "symbols": [
+                                                "UNKNOWN",
+                                                "OK",
+                                                "WARN",
+                                                "ERROR",
+                                                "DISABLED"
+                                            ]
+                                        },
+                                        "default": "UNKNOWN"
+                                    }
+                                ]
+                            }
+                        },
+                        "default": []
+                    }
+                ]
+            }
+        },
+        {
+            "name": "payload",
+            "type": [
+                "null",
+                "string"
+            ],
+            "default": null,
+            "doc": "Сырая полезная нагрузка исходного события, если ее нужно сохранить для аудита или последующего анализа."
+        }
+    ]
 }

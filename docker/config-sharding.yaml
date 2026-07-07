@@ -1,0 +1,80 @@
+databaseName: device_collector_service
+
+dataSources:
+  # === Источники данных для ШАРДА 0 ===
+  ds_0_primary:
+    url: jdbc:postgresql://postgres-shard0-master:5432/device_collector_service
+    username: user
+    password: user
+  ds_0_replica:
+    url: jdbc:postgresql://postgres-shard0-replica:5432/device_collector_service
+    username: user
+    password: user
+  # === Источники данных для ШАРДА 1 ===
+  ds_1_primary:
+    url: jdbc:postgresql://postgres-shard1-master:5432/device_collector_service
+    username: user
+    password: user
+  ds_1_replica:
+    url: jdbc:postgresql://postgres-shard1-replica:5432/device_collector_service
+    username: user
+    password: user
+
+rules:
+  # ==========================================
+  # 1. ПРАВИЛА READWRITE-SPLITTING
+  # ==========================================
+  - !READWRITE_SPLITTING
+    dataSourceGroups:
+      ds_0:
+        writeDataSourceName: ds_0_primary
+        readDataSourceNames:
+          - ds_0_replica
+        transactionalReadQueryStrategy: PRIMARY
+        loadBalancerName: round_robin
+      ds_1:
+        writeDataSourceName: ds_1_primary
+        readDataSourceNames:
+          - ds_1_replica
+        transactionalReadQueryStrategy: PRIMARY
+        loadBalancerName: round_robin
+
+    loadBalancers:
+      round_robin:
+        type: ROUND_ROBIN
+
+  # ==========================================
+  # 2. ПРАВИЛА ШАРДИРОВАНИЯ
+  # ==========================================
+  - !SHARDING
+    tables:
+      device:
+        actualDataNodes: ds_${0..1}.device
+        databaseStrategy:
+          standard:
+            shardingColumn: external_device_id
+            shardingAlgorithmName: external_device_id_inline
+      sensor:
+        actualDataNodes: ds_${0..1}.sensor
+        databaseStrategy:
+          standard:
+            shardingColumn: external_device_id
+            shardingAlgorithmName: external_device_id_inline
+      processed_device_event:
+        actualDataNodes: ds_${0..1}.processed_device_event
+        databaseStrategy:
+          standard:
+            shardingColumn: event_id
+            shardingAlgorithmName: event_id_inline
+
+    # ===== Алгоритмы шардирования =====
+    shardingAlgorithms:
+      external_device_id_inline:
+        type: INLINE
+        props:
+          algorithm-expression: ds_${external_device_id.hashCode() % 2}
+
+      event_id_inline:
+        type: INLINE
+        props:
+          algorithm-expression: ds_${event_id.hashCode() % 2}

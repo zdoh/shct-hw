@@ -5,11 +5,12 @@ import java.time.OffsetDateTime;
 
 public record DeviceEventReceived(
   String eventId,
-  String deviceId,
-  Long timestampMs,
-  String eventType,
+  DeviceEventType eventType,
+  Long eventTimeMs,
+  String sourceSystem,
   String payload,
   LocalDate eventDate,
-  OffsetDateTime ingestedAt
+  OffsetDateTime ingestedAt,
+  Device device
 ) {
 }

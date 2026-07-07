@@ -9,7 +9,7 @@ plugins {
 }
 
 group = "ru.zdoher"
-version = "0.0.1-SNAPSHOT"
+version = "1.0-SNAPSHOT"
 
 java {
 	toolchain {
@@ -55,12 +55,12 @@ dependencies {
     implementation("org.apache.avro:avro:$avroVersion")
 
 	implementation("com.clickhouse:clickhouse-jdbc:$clickHouseJdbc")
+
 	implementation("org.springframework.boot:spring-boot-starter-flyway")
 	implementation("org.flywaydb:flyway-database-clickhouse:$flywayDatabaseClickhouse")
 
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
 
-    implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("io.micrometer:micrometer-registry-prometheus")
 
     implementation("io.github.cdimascio:dotenv-java:$dotenvJava")

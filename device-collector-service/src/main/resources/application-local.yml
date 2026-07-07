@@ -1,0 +1,38 @@
+server:
+    port: 8790
+spring:
+    config:
+        import: optional:file:.env[.properties]
+    datasource:
+        username: ${DEVICE_COLLECTOR_PR_PG_USER}
+        password: ${DEVICE_COLLECTOR_PR_PG_PASSWORD}
+        driver-class-name: org.postgresql.Driver
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        url: jdbc:postgresql://localhost:13308/device_collector_service
+        schema: device_collector_service
+    flyway:
+        enabled: false
+    jpa:
+        show-sql: true
+
+    kafka:
+        bootstrap-servers: localhost:19092
+        schema-registry:
+            url: "http://localhost:8381"
+        consumer:
+            enable-auto-commit: false
+            group-id: device-collector
+            max-poll-records: 1
+            manual: acknowledgment
+            batch-listener: false
+            topics:
+                collect-device:
+                    topic-name: devices
+                    retry:
+                        attempts: 4
+                        backoff-delay-ms: 1000
+                        backoff-multiply: 2.0
+        producer:
+            max-retries: 4
+            max-in-flight-requests-per-connection: 5
+            max-block-ms: 8000

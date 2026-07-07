@@ -1,0 +1,12 @@
+package ru.zdoher.device.collector;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class DeviceCollectorService {
+
+    static void main(String[] args) {
+        SpringApplication.run(DeviceCollectorService.class, args);
+    }
+}

@@ -1,5 +1,16 @@
 version: '2'
 
+x-shared-postgresql: &shared_postgresql
+    image: postgres:18-alpine
+    restart: unless-stopped
+
+x-shared-postgresql-env: &shared_postgresql_env
+    POSTGRES_USER: ${POSTGRES_USER}
+    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    POSTGRES_DB: ${POSTGRES_DB}
+    POSTGRES_REPLICATION_USER: ${POSTGRES_REPLICATION_USER}
+    POSTGRES_REPLICATION_PASSWORD: ${POSTGRES_REPLICATION_PASSWORD}
+
 services:
     kafka:
         image: apache/kafka:4.2.0
@@ -79,8 +90,8 @@ services:
         environment:
             REDIS_PASSWORD: ${REDIS_PASSWORD}
         command: >
-            redis-server 
-            --save 60 1 
+            redis-server
+            --save 60 1
             --loglevel warning
             --requirepass ${REDIS_PASSWORD}
         restart: unless-stopped
@@ -90,7 +101,123 @@ services:
             timeout: 5s
             retries: 10
 
+    ###
+    # ---- настройки PostgreSQL
+    ###
 
+    # ---- Первый шард PostgreSQL master ----
+    ## --- shard0.master ---
+    postgres-shard0-master:
+        <<: *shared_postgresql
+        container_name: postgres-shard0-master
+        environment:
+            <<: *shared_postgresql_env
+        volumes:
+            - ./scripts/01_init.sql:/docker-entrypoint-initdb.d/01-init.sql
+            - ./config/postgresql/shard0/master/postgresql.conf:/etc/postgresql/postgresql.conf
+            - ./config/postgresql/shard0/master/pg_hba.conf:/etc/postgresql/pg_hba.conf
+            - ./scripts/postgresql/init-master.sh:/docker-entrypoint-initdb.d/init-master.sh
+        command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
+        ports:
+            - "5433:5432"
+        restart: unless-stopped
+        healthcheck:
+            test: [ "CMD-SHELL", "pg_isready -U postgres -d postgres" ]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+    ## --- shard0.replica ---
+    postgres-shard0-replica:
+        <<: *shared_postgresql
+        container_name: postgres-shard0-replica
+        depends_on:
+            - postgres-shard0-master
+        environment:
+            <<: *shared_postgresql_env
+            MASTER_HOST: postgres-shard0-master
+        volumes:
+            - ./config/postgresql/shard0/replica/postgresql.conf:/etc/postgresql/postgresql.conf
+            - ./config/postgresql/shard0/replica/pg_hba.conf:/etc/postgresql/pg_hba.conf
+            - ./scripts/postgresql/init-replica.sh:/docker-entrypoint-initdb.d/init-replica.sh
+        command: [ "postgres", "-c", "config_file=/etc/postgresql/postgresql.conf" ]
+        ports:
+            - "5434:5432"
+        restart: unless-stopped
+        healthcheck:
+            test: [ "CMD-SHELL", "pg_isready -U postgres -d postgres" ]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+    ## --- shard1.master ---
+    postgres-shard1-master:
+        <<: *shared_postgresql
+        container_name: postgres-shard1-master
+        environment:
+            <<: *shared_postgresql_env
+        volumes:
+            - ./scripts/01_init.sql:/docker-entrypoint-initdb.d/01-init.sql
+            - ./config/postgresql/shard1/master/postgresql.conf:/etc/postgresql/postgresql.conf
+            - ./config/postgresql/shard1/master/pg_hba.conf:/etc/postgresql/pg_hba.conf
+            - ./scripts/postgresql/init-master.sh:/docker-entrypoint-initdb.d/init-master.sh
+        command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
+        ports:
+            - "5435:5432"
+        restart: unless-stopped
+        healthcheck:
+            test: [ "CMD-SHELL", "pg_isready -U postgres -d postgres" ]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+    ## --- shard0.replica ---
+    postgres-shard1-replica:
+        <<: *shared_postgresql
+        container_name: postgres-shard1-replica
+        depends_on:
+            - postgres-shard1-master
+        environment:
+            <<: *shared_postgresql_env
+            MASTER_HOST: postgres-shard1-master
+        volumes:
+            - ./config/postgresql/shard1/replica/postgresql.conf:/etc/postgresql/postgresql.conf
+            - ./config/postgresql/shard1/replica/pg_hba.conf:/etc/postgresql/pg_hba.conf
+            - ./scripts/postgresql/init-replica.sh:/docker-entrypoint-initdb.d/init-replica.sh
+        command: [ "postgres", "-c", "config_file=/etc/postgresql/postgresql.conf" ]
+        ports:
+            - "5436:5432"
+        restart: unless-stopped
+        healthcheck:
+            test: [ "CMD-SHELL", "pg_isready -U postgres -d postgres" ]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+    # ---- ShardingSphere-Proxy ----
+    shardingsphere-proxy:
+        image: apache/shardingsphere-proxy:5.5.3
+        container_name: shardingsphere-proxy
+        ports:
+            - "13308:3308"  # Прокси будет доступен на порту 13308
+        volumes:
+            - ./global.yaml:/opt/shardingsphere-proxy/conf/global.yaml
+            - ./config-sharding.yaml:/opt/shardingsphere-proxy/conf/config-sharding.yaml
+        environment:
+            PORT: 3308
+            JVM_OPTS: "-Djava.awt.headless=true"
+        healthcheck:
+            test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/3308' && echo 'OK' || exit 1"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        depends_on:
+            postgres-shard0-master:
+                condition: service_healthy
+            postgres-shard0-replica:
+                condition: service_healthy
+            postgres-shard1-master:
+                condition: service_healthy
+            postgres-shard1-replica:
+                condition: service_healthy
+        restart: unless-stopped
 
     kafka-ui:
         container_name: shcut-kafka-ui
@@ -105,6 +232,7 @@ services:
             KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
             KAFKA_CLUSTERS_0_SCHEMAREGISTRY: "http://schema-registry:8381"
 
+    # ---- Мои сервисы ----
     events-collector-service:
         build:
             context: ../events-collector-service
@@ -128,13 +256,40 @@ services:
         labels:
             logging: "promtail"
         expose:
-            - "8781"
             - "8780"
+            - "8781"
         ports:
-            - 8781:8781
             - 8780:8780
+            - 8781:8781
 
-    ### --- СЕРВИСЫ МОНИТОРИНГА  ---
+    device-collector-service:
+        build:
+            context: ../device-collector-service
+            dockerfile: Dockerfile
+        container_name: device-collector-service
+        environment:
+            SPRING_PROFILES_ACTIVE: docker
+            CLICKHOUSE_USER: ${CLICKHOUSE_USER}
+            DEVICE_COLLECTOR_PR_PG_USER: ${DEVICE_COLLECTOR_PR_PG_USER}
+            DEVICE_COLLECTOR_PR_PG_PASSWORD: ${DEVICE_COLLECTOR_PR_PG_USER}
+        depends_on:
+            kafka:
+                condition: service_healthy
+            schema-registry:
+                condition: service_healthy
+            shardingsphere-proxy:
+                condition: service_healthy
+        restart: unless-stopped
+        labels:
+            logging: "promtail"
+        expose:
+            - "8780"
+            - "8791"
+        ports:
+            - 8790:8790
+            - 8791:8791
+
+    ## --- СЕРВИСЫ МОНИТОРИНГА  ---
     prometheus:
         image: prom/prometheus:latest
         container_name: prometheus

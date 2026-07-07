@@ -1,0 +1,10 @@
+authority:
+  users:
+    - user: someuser@%
+      password: someuser
+  privilege:
+    type: ALL_PERMITTED
+#    type: DATABASE_PERMITTED
+#    props:
+#      user-database-mappings:
+#        someuser@%: device_collector_service

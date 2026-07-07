@@ -16,10 +16,10 @@ public class DeviceEventRepositoryImpl implements DeviceEventRepository {
 
     @Override
     public DeviceEventReceived save(DeviceEventReceived deviceEventReceived) {
-        return deviceEventMapper.to(
-          clickHouseEventRepository.save(
-            deviceEventMapper.from(deviceEventReceived)
-          )
+        clickHouseEventRepository.save(
+          deviceEventMapper.from(deviceEventReceived)
         );
+
+        return deviceEventReceived;
     }
 }

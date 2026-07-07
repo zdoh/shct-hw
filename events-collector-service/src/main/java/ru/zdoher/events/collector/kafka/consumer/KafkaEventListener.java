@@ -21,14 +21,12 @@ public class KafkaEventListener {
     @KafkaListener(
       topics = "${spring.kafka.consumer.topics.collect-device-event}",
       containerFactory = DEVICE_EVENT_LISTENER_CONTAINER_FACTORY
-
     )
     public void listen(DeviceEvent deviceEvent, Acknowledgment ack) {
         try {
             log.debug(
-              "Received event [DeviceEvent] with event ID {} and device ID [{}]",
-              deviceEvent.getEventId(),
-              deviceEvent.getDeviceId()
+              "Received event [DeviceEvent] with event ID [{}]",
+              deviceEvent.getEventId()
             );
 
             eventIngestor.ingest(deviceEvent);
